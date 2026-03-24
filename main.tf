@@ -19,28 +19,35 @@ module "eks" {
   cluster_name    = "monitoring-cluster"
   cluster_version = "1.31"
 
-  # Networking Setup
   vpc_id     = data.aws_vpc.default.id
   subnet_ids = data.aws_subnets.all.ids
 
-  # --- CRITICAL FIXES FOR PERSISTENT DEPLOYMENT ---
-  # Since these already exist in your AWS account, we tell Terraform
-  # to manage the cluster without trying to recreate these sub-resources.
+  # --- CRITICAL: PREVENT REPLACEMENT (MATCHING AWS ACTUALS) ---
+  # This stops Terraform from trying to create a new IAM role
+  create_iam_role = false
+  iam_role_arn    = "arn:aws:iam::611538926967:role/monitoring-cluster-cluster-20260324092643765400000003"
+  
+  # Prevents replacement by matching the existing 'false' state
+  bootstrap_self_managed_addons = false 
+
+  cluster_encryption_config = {
+    resources        = ["secrets"]
+    provider_key_arn = "arn:aws:kms:eu-west-2:611538926967:key/4ee6adb0-ad16-456e-9274-4d5224d4cf3c"
+  }
+
+  attach_cluster_encryption_policy = true
+  
+  # Module-specific way to handle access config without triggering a recreate
+  authentication_mode                         = "API_AND_CONFIG_MAP"
+  enable_cluster_creator_admin_permissions    = true
+  # ------------------------------------------------------------
+
   create_cloudwatch_log_group      = false
   create_kms_key                   = false
-  cluster_encryption_config        = {} 
-  attach_cluster_encryption_policy = false
-  # ------------------------------------------------
-
-  # Access Settings: Required for local kubectl and Helm access
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
 
-  # Grants your IAM user/GitHub Actions runner admin rights
-  enable_cluster_creator_admin_permissions = true
-
   # 4. Managed Node Group (The Workers)
-  # t3.small is the "sweet spot" for Prometheus/Grafana memory requirements
   eks_managed_node_groups = {
     monitoring_nodes = {
       min_size       = 1
