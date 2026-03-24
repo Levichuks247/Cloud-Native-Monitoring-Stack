@@ -1,11 +1,9 @@
 # 1. Automatically find your Default VPC 
-# No need for manual IDs—this keeps your code portable!
 data "aws_vpc" "default" {
   default = true
 }
 
 # 2. Find ALL Subnets in the Default VPC 
-# This is more robust than filtering for 'public' tags, which often fail in default VPCs.
 data "aws_subnets" "all" {
   filter {
     name   = "vpc-id"
@@ -21,15 +19,20 @@ module "eks" {
   cluster_name    = "monitoring-cluster"
   cluster_version = "1.31"
 
-  # We use the VPC and Subnets discovered by the data sources above
+  # Networking Setup
   vpc_id     = data.aws_vpc.default.id
   subnet_ids = data.aws_subnets.all.ids
+
+  # --- THE FIX STARTS HERE ---
+  # These lines enable your local machine to connect via kubectl
+  cluster_endpoint_public_access  = true
+  cluster_endpoint_private_access = true
+  # ---------------------------
 
   # Crucial for Project 4: Grants your IAM user admin rights to the cluster
   enable_cluster_creator_admin_permissions = true
 
   # 4. Managed Node Group (The Workers)
-  # We use t3.small because Prometheus & Grafana need ~2GB of RAM to stay stable
   eks_managed_node_groups = {
     monitoring_nodes = {
       min_size       = 1
@@ -44,7 +47,6 @@ module "eks" {
 }
 
 # 5. Output the Cluster Name 
-# This confirms a successful build in your GitHub Action logs
 output "cluster_name" {
   value = module.eks.cluster_name
 }
