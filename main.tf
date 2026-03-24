@@ -23,11 +23,16 @@ module "eks" {
   vpc_id     = data.aws_vpc.default.id
   subnet_ids = data.aws_subnets.all.ids
 
-  # --- THE FIX STARTS HERE ---
-  # These lines enable your local machine to connect via kubectl
+  # --- FIX FOR "ALREADY EXISTS" ERRORS ---
+  # This tells Terraform to use what's already there instead of failing
+  create_cloudwatch_log_group = false
+  create_kms_key              = false
+  include_oidc_association_recorder_cluster_role = true
+  # ---------------------------------------
+
+  # Access Settings
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
-  # ---------------------------
 
   # Crucial for Project 4: Grants your IAM user admin rights to the cluster
   enable_cluster_creator_admin_permissions = true
