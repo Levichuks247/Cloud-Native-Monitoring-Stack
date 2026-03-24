@@ -23,14 +23,13 @@ module "eks" {
   vpc_id     = data.aws_vpc.default.id
   subnet_ids = data.aws_subnets.all.ids
 
-  # --- FIX FOR "ALREADY EXISTS" ERRORS ---
-  # This tells Terraform to use what's already there instead of failing
+  # --- THE FIX FOR "ALREADY EXISTS" ERRORS ---
+  # This tells Terraform NOT to try and create things that are already in AWS
   create_cloudwatch_log_group = false
   create_kms_key              = false
-  include_oidc_association_recorder_cluster_role = true
-  # ---------------------------------------
+  # -------------------------------------------
 
-  # Access Settings
+  # Access Settings: Enables your local machine to connect via kubectl
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
 
