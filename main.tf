@@ -23,23 +23,24 @@ module "eks" {
   vpc_id     = data.aws_vpc.default.id
   subnet_ids = data.aws_subnets.all.ids
 
-  # --- THE FIX FOR THE "UNSUPPORTED ATTRIBUTE" ERROR ---
-  create_cloudwatch_log_group = false
-  create_kms_key              = false
-  
-  # This tells the module: "Don't look for a provider_key_arn because we aren't using one"
-  cluster_encryption_config = {} 
+  # --- CRITICAL FIXES FOR PERSISTENT DEPLOYMENT ---
+  # Since these already exist in your AWS account, we tell Terraform
+  # to manage the cluster without trying to recreate these sub-resources.
+  create_cloudwatch_log_group      = false
+  create_kms_key                   = false
+  cluster_encryption_config        = {} 
   attach_cluster_encryption_policy = false
-  # ----------------------------------------------------
+  # ------------------------------------------------
 
-  # Access Settings
+  # Access Settings: Required for local kubectl and Helm access
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
 
-  # Grants your IAM user admin rights to the cluster
+  # Grants your IAM user/GitHub Actions runner admin rights
   enable_cluster_creator_admin_permissions = true
 
   # 4. Managed Node Group (The Workers)
+  # t3.small is the "sweet spot" for Prometheus/Grafana memory requirements
   eks_managed_node_groups = {
     monitoring_nodes = {
       min_size       = 1
