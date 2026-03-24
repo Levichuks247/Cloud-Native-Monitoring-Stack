@@ -23,17 +23,20 @@ module "eks" {
   vpc_id     = data.aws_vpc.default.id
   subnet_ids = data.aws_subnets.all.ids
 
-  # --- THE FIX FOR "ALREADY EXISTS" ERRORS ---
-  # This tells Terraform NOT to try and create things that are already in AWS
+  # --- THE FIX FOR THE "UNSUPPORTED ATTRIBUTE" ERROR ---
   create_cloudwatch_log_group = false
   create_kms_key              = false
-  # -------------------------------------------
+  
+  # This tells the module: "Don't look for a provider_key_arn because we aren't using one"
+  cluster_encryption_config = {} 
+  attach_cluster_encryption_policy = false
+  # ----------------------------------------------------
 
-  # Access Settings: Enables your local machine to connect via kubectl
+  # Access Settings
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
 
-  # Crucial for Project 4: Grants your IAM user admin rights to the cluster
+  # Grants your IAM user admin rights to the cluster
   enable_cluster_creator_admin_permissions = true
 
   # 4. Managed Node Group (The Workers)
@@ -43,9 +46,7 @@ module "eks" {
       max_size       = 3
       desired_size   = 2
       instance_types = ["t3.small"]
-      
-      # Ensures stability for our monitoring stack
-      capacity_type = "ON_DEMAND"
+      capacity_type  = "ON_DEMAND"
     }
   }
 }
